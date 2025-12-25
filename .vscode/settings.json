@@ -1,0 +1,10 @@
+{
+	"conventionalCommits.scopes": [
+		"generator",
+		"homepage",
+		"component",
+		"lib",
+		"back-end",
+		"api"
+	]
+}
