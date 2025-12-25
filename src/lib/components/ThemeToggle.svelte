@@ -24,8 +24,8 @@
 </script>
 
 <button on:click={toggle}>
-    <img src="/darkMode.png" alt="moon" id="moon" />
-    <img src="/lightMode.png" alt="sun" id="sun" />
+    <div class="icon sun">☀️</div>
+    <div class="icon moon">🌙</div>
     <slot />
 </button>
 
@@ -37,28 +37,21 @@
 
         height: 6rem;
         width: 6rem;
-
-        #moon {
+        .moon {
             display: none;
-
-            height: 100%;
-            width: auto;
         }
 
-        #sun {
+        .sun {
             display: block;
-
-            height: 100%;
-            width: auto;
         }
     }
 
     :global(body.dark-mode) button {
-        #sun {
+        .sun {
             display: none;
         }
 
-        #moon {
+        .moon {
             display: block;
         }
     }
