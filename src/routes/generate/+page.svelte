@@ -154,10 +154,22 @@
         </div>
 
         <div class="actions">
-            <div class="btn-wrap" on:click={savePicture}>
+            <div
+                class="btn-wrap"
+                on:click={savePicture}
+                on:keydown={savePicture}
+                role="button"
+                tabindex="0"
+            >
                 <SaveButton text="Download" />
             </div>
-            <div class="btn-wrap" on:click={copyPicture}>
+            <div
+                class="btn-wrap"
+                on:click={copyPicture}
+                on:keydown={copyPicture}
+                role="button"
+                tabindex="0"
+            >
                 <SaveButton text="Copy" />
             </div>
         </div>
