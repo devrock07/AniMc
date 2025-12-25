@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    
-    const names = ["SmarteOwl", "wilbursoot", "fundy", "elii_bx", "purpled", "tommyinnit"];
+    import { onMount } from "svelte";
+
+    const names = ["Showcase3", "Showcase4", "Makima"];
     const name = names[Math.floor(Math.random() * names.length)];
 </script>
 
@@ -15,22 +15,29 @@
             <span>Create your unique</span>
             <span class="highlight">Minecraft PFP</span>
         </h1>
-        <p class="subtitle">Stop paying for basic art. Generate high-quality, 3D-rendered profile pictures in seconds.</p>
-        
+        <p class="subtitle">
+            Stop paying for basic art. Generate high-quality, 3D-rendered
+            profile pictures in seconds.
+        </p>
+
         <div class="cta-group">
             <a href="/generate" class="btn-primary">
                 <span>Start Generating</span>
             </a>
-            <a href="https://github.com/MauritsWilke/mcpfp" target="_blank" class="btn-secondary">View on GitHub</a>
+            <a
+                href="https://github.com/MauritsWilke/mcpfp"
+                target="_blank"
+                class="btn-secondary">View on GitHub</a
+            >
         </div>
     </div>
 
     <div class="showcase">
         <div class="card card-1">
-            <img src="/PFP/I_Like_Cats__.png" alt="Example 1" />
+            <img src="/PFP/Showcase1.png" alt="Example 1" />
         </div>
         <div class="card card-2">
-            <img src="/PFP/E_Like_Cats__.png" alt="Example 2" />
+            <img src="/PFP/Showcase2.png" alt="Example 2" />
         </div>
         <div class="card card-3">
             <img src="/PFP/{name}.png" alt="Example 3" />
@@ -70,7 +77,11 @@
 
             .highlight {
                 color: transparent;
-                background: linear-gradient(90deg, var(--primary), var(--accent-color));
+                background: linear-gradient(
+                    90deg,
+                    var(--primary),
+                    var(--accent-color)
+                );
                 -webkit-background-clip: text;
                 background-clip: text;
             }
@@ -86,14 +97,15 @@
         .cta-group {
             display: flex;
             gap: 2rem;
-            
+
             @media (max-width: 900px) {
                 justify-content: center;
             }
         }
     }
 
-    .btn-primary, .btn-secondary {
+    .btn-primary,
+    .btn-secondary {
         padding: 1.5rem 3rem;
         border-radius: 12px;
         font-size: 1.6rem;
@@ -135,9 +147,9 @@
             position: absolute;
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
             transition: all 0.5s ease;
-            
+
             img {
                 width: 100%;
                 height: 100%;
@@ -175,15 +187,34 @@
 
         @media (max-width: 900px) {
             height: 400px;
-            
-            .card-1 { width: 200px; height: 200px; right: 50px; }
-            .card-2 { width: 160px; height: 160px; right: 150px; top: 150px; }
-            .card-3 { width: 140px; height: 140px; left: 50px; top: 80px; }
+
+            .card-1 {
+                width: 200px;
+                height: 200px;
+                right: 50px;
+            }
+            .card-2 {
+                width: 160px;
+                height: 160px;
+                right: 150px;
+                top: 150px;
+            }
+            .card-3 {
+                width: 140px;
+                height: 140px;
+                left: 50px;
+                top: 80px;
+            }
         }
     }
 
     @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-20px); }
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
     }
 </style>

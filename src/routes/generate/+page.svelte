@@ -24,7 +24,7 @@
 
     onMount(async () => {
         if (!urlSearchParamIGN)
-            goto("/generate?ign=I_Like_Cats__", { replaceState: false });
+            goto("/generate?ign=makima", { replaceState: false });
         else username = urlSearchParamIGN.replace(/[^a-z0-9_]/gi, "");
 
         gradientCanvas = window.document.getElementById(
@@ -52,7 +52,7 @@
     async function updatePfp() {
         isLoading = true;
         await generatePfp(
-            `https://minotar.net/skin/${username || "I_Like_Cats__"}.png`,
+            `https://minotar.net/skin/${username || "makima"}.png`,
             profileCtx,
         );
         isLoading = false;
@@ -99,7 +99,7 @@
                 );
                 goto(`/generate?ign=${username}`, {
                     replaceState: true,
-                    keepfocus: true,
+                    keepFocus: true,
                 });
             }, 300);
         } catch (e) {

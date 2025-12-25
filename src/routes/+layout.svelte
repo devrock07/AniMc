@@ -5,7 +5,7 @@
 <nav id="navBar">
     <div class="nav-content">
         <a href="/" class="logo">
-            <img src="/PFP/I_Like_Cats__.png" alt="AniMc Logo" />
+            <img src="/PFP/Makima.png" alt="AniMc Logo" />
             <h1>AniMc</h1>
         </a>
         <div class="nav-links">
@@ -22,8 +22,16 @@
     <div class="footer-content">
         <p>&copy; 2025 AniMc. All rights reserved.</p>
         <div class="footer-links">
-            <a href="https://github.com/MauritsWilke/mcpfp" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a href="https://ko-fi.com/mauritswilke" target="_blank" rel="noopener noreferrer">Ko-fi</a>
+            <a
+                href="https://github.com/MauritsWilke/mcpfp"
+                target="_blank"
+                rel="noopener noreferrer">GitHub</a
+            >
+            <a
+                href="https://ko-fi.com/mauritswilke"
+                target="_blank"
+                rel="noopener noreferrer">Ko-fi</a
+            >
         </div>
     </div>
 </footer>
@@ -39,7 +47,7 @@
         --text-muted: #9ca3af;
         --glass: rgba(255, 255, 255, 0.05);
         --glass-border: rgba(255, 255, 255, 0.1);
-        --font-main: 'Outfit', sans-serif;
+        --font-main: "Outfit", sans-serif;
     }
 
     :global(html) {
@@ -160,7 +168,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 0 2rem;
-            
+
             p {
                 font-size: 1.4rem;
                 color: var(--text-muted);
@@ -183,7 +191,7 @@
                 }
             }
         }
-        
+
         @media (max-width: 768px) {
             .footer-content {
                 flex-direction: column;
