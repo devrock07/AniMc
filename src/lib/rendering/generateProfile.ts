@@ -1,6 +1,10 @@
 import { getSkin } from "./mojang";
-import { loadImage } from "@napi-rs/canvas";
-const prefix = process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://ani-mc.vercel.app";
+import { loadImage } from "./image";
+import { browser } from "$app/environment";
+
+const prefix = browser
+	? "" // Relative path for browser (works on mobile/network)
+	: (process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://ani-mc.vercel.app");
 
 async function generatePfp(username: string, ctx: any) {
 	try {
@@ -9,7 +13,12 @@ async function generatePfp(username: string, ctx: any) {
 			return;
 		}
 
-		const skinURL = await getSkin(username);
+		// Handle Minotar URL inputs directly (client-side specific fix)
+		let skinURL = username;
+		if (!username.startsWith('http')) {
+			skinURL = await getSkin(username);
+		}
+
 		const skinImage = await loadImage(skinURL);
 		const shading = await loadImage(`${prefix}/20x20pshading.png`);
 		const backdrop = await loadImage(`${prefix}/backdropshading.png`);
@@ -46,11 +55,13 @@ async function generatePfp(username: string, ctx: any) {
 
 		ctx.drawImage(shading, 0, 0, 20, 20);
 	} catch (e) {
+		console.error("GeneratePFP Error:", e);
 		await drawFailed(ctx);
 	}
 }
 
 async function drawFailed(ctx) {
+	console.log("Drawing failed state...");
 	const failed = await loadImage(`${prefix}/PFP/notFound.png`);
 	const shading = await loadImage(`${prefix}/20x20pshading.png`);
 	const backdrop = await loadImage(`${prefix}/backdropshading.png`);

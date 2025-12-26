@@ -541,6 +541,8 @@
             width: 100%;
             max-width: 300px;
             aspect-ratio: 1;
+            display: block; /* Ensure it takes space */
+            min-height: 200px; /* Fallback height to prevent 0px collapse */
 
             canvas {
                 position: absolute;
@@ -549,6 +551,7 @@
                 width: 100%;
                 height: 100%;
                 border-radius: 16px;
+                object-fit: contain; /* Ensure image fits */
             }
         }
     }
