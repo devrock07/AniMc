@@ -60,12 +60,16 @@
             flex-direction: column;
             text-align: center;
             padding-top: 8rem;
+        @media (max-width: 600px) {
+            padding: 2rem 1rem;
+            padding-top: 6rem;
         }
     }
 
     .hero-content {
         flex: 1;
         max-width: 600px;
+        width: 100%;
 
         .title {
             font-size: 6rem;
@@ -74,6 +78,10 @@
             margin-bottom: 2rem;
             display: flex;
             flex-direction: column;
+
+            @media (max-width: 600px) {
+                font-size: 3.6rem;
+            }
 
             .highlight {
                 color: transparent;
@@ -97,6 +105,7 @@
         .cta-group {
             display: flex;
             gap: 2rem;
+            flex-wrap: wrap;
 
             @media (max-width: 900px) {
                 justify-content: center;

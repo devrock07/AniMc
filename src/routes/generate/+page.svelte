@@ -335,12 +335,19 @@
         width: 100%;
         max-width: 600px;
         animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+
+        @media (max-width: 600px) {
+            padding: 2rem 1.5rem;
+            border-radius: 16px;
+            gap: 2rem;
+        }
     }
 
     .card-title {
         font-size: 3.2rem;
         font-weight: 700;
         margin: 0;
+        text-align: center;
         background: linear-gradient(
             135deg,
             var(--primary) 0%,
@@ -349,6 +356,39 @@
         -webkit-background-clip: text;
         background-clip: text;
         -webkit-text-fill-color: transparent;
+
+        @media (max-width: 600px) {
+            font-size: 2.4rem;
+        }
+    }
+
+    /* ... omitted parts ... */
+    
+    .canvas-wrapper {
+        position: relative;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 24px;
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        max-width: 100%;
+
+        .canvas-stack {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1;
+            /* height: 300px;  Removed fixed height */
+
+            canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border-radius: 16px;
+            }
+        }
     }
 
     .mode-toggle {
@@ -494,11 +534,13 @@
         border-radius: 24px;
         border: 1px solid var(--glass-border);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        max-width: 100%;
 
         .canvas-stack {
             position: relative;
-            width: 300px;
-            height: 300px;
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1;
 
             canvas {
                 position: absolute;
