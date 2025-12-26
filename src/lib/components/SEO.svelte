@@ -1,8 +1,8 @@
 <script lang="ts">
-    export let title = "minecraftpfp.com";
-    export let description = "minecraftpfp.com";
+    export let title = "AniMc";
+    export let description = "Create custom Minecraft profile pictures instantly with AniMc.";
     export let username = "I_Like_Cats__";
-    const imgURL = `https://minecraftpfp.com/api/pfp/${username}.png`;
+    const imgURL = `https://ani-mc.vercel.app/api/pfp/${username}.png`;
 </script>
 
 <svelte:head>

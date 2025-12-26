@@ -1,6 +1,6 @@
 import { getSkin } from "./mojang";
 import { loadImage } from "@napi-rs/canvas";
-const prefix = process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://minecraftpfp.com";
+const prefix = process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://ani-mc.vercel.app";
 
 async function generatePfp(username: string, ctx: any) {
 	try {
