@@ -1,5 +1,6 @@
 <script lang="ts">
     import "../app.css";
+    import MusicPlayer from "$lib/components/MusicPlayer.svelte";
 
     function copyAddress(bg: string, type: string) {
         navigator.clipboard.writeText(bg);
@@ -22,6 +23,8 @@
 <main>
     <slot />
 </main>
+
+<MusicPlayer />
 
 <footer id="footer">
     <div class="footer-content">
@@ -54,7 +57,6 @@
 </footer>
 
 <style lang="scss">
-    /* Global Variables & Reset */
     :global(:root) {
         --bg-main: #0a0a0a;
         --bg-secondary: #121212;
@@ -79,26 +81,23 @@
         color: var(--text-main);
         font-family: var(--font-main);
         overflow-x: hidden;
+        /* Custom Scrollbar */
+        &::-webkit-scrollbar {
+            width: 8px;
+        }
+        &::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        &::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
     }
 
     :global(*) {
         box-sizing: border-box;
     }
 
-    :global(::-webkit-scrollbar) {
-        width: 8px;
-    }
-
-    :global(::-webkit-scrollbar-track) {
-        background: var(--bg-main);
-    }
-
-    :global(::-webkit-scrollbar-thumb) {
-        background: var(--primary);
-        border-radius: 4px;
-    }
-
-    /* Layout Structure */
     main {
         min-height: calc(100vh - 80px - 60px); /* Nav height - Footer height */
         padding-top: 80px;
