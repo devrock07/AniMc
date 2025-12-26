@@ -25,7 +25,7 @@
                 <span>Start Generating</span>
             </a>
             <a
-                href="https://github.com/MauritsWilke/mcpfp"
+                href="https://github.com/devrock07/AniMc"
                 target="_blank"
                 class="btn-secondary">View on GitHub</a
             >

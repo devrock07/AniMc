@@ -1,5 +1,10 @@
 <script lang="ts">
-    import "../app.css"; // Ensure we have a global CSS file if needed, or define here.
+    import "../app.css";
+
+    function copyAddress(bg: string, type: string) {
+        navigator.clipboard.writeText(bg);
+        alert(`Copied ${type} address to clipboard!`);
+    }
 </script>
 
 <nav id="navBar">
@@ -23,15 +28,27 @@
         <p>&copy; 2025 AniMc. All rights reserved.</p>
         <div class="footer-links">
             <a
-                href="https://github.com/MauritsWilke/mcpfp"
+                href="https://github.com/devrock07/AniMc"
                 target="_blank"
                 rel="noopener noreferrer">GitHub</a
             >
-            <a
-                href="https://ko-fi.com/mauritswilke"
-                target="_blank"
-                rel="noopener noreferrer">Ko-fi</a
-            >
+            <div class="donation-group">
+                <span>Donate:</span>
+                <button
+                    on:click={() =>
+                        copyAddress(
+                            "LcPnFkTa5UTav5Ue3dM6GdLh7LpTm47JZx",
+                            "LTC",
+                        )}>LTC</button
+                >
+                <button
+                    on:click={() =>
+                        copyAddress(
+                            "bc1qdumjz2sex6uykuffnlrxwr6qlj27euvaee7rl8",
+                            "BTC",
+                        )}>BTC</button
+                >
+            </div>
         </div>
     </div>
 </footer>
@@ -179,6 +196,7 @@
         .footer-links {
             display: flex;
             gap: 2rem;
+            align-items: center;
 
             a {
                 color: var(--text-muted);
@@ -192,11 +210,51 @@
             }
         }
 
+        .donation-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-left: 2rem;
+            padding-left: 2rem;
+            border-left: 1px solid var(--glass-border);
+
+            span {
+                font-size: 1.4rem;
+                color: var(--text-muted);
+            }
+
+            button {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--glass-border);
+                color: var(--text-main);
+                padding: 0.4rem 1rem;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 1.2rem;
+                font-family: var(--font-main);
+                transition: all 0.2s ease;
+
+                &:hover {
+                    background: var(--primary);
+                    border-color: var(--primary);
+                    color: white;
+                }
+            }
+        }
+
         @media (max-width: 768px) {
             .footer-content {
                 flex-direction: column;
                 gap: 2rem;
                 text-align: center;
+            }
+
+            .donation-group {
+                margin: 0;
+                padding: 0;
+                border: none;
+                flex-wrap: wrap;
+                justify-content: center;
             }
         }
     }
