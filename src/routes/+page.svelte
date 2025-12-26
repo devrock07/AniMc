@@ -60,6 +60,8 @@
             flex-direction: column;
             text-align: center;
             padding-top: 8rem;
+        }
+
         @media (max-width: 600px) {
             padding: 2rem 1rem;
             padding-top: 6rem;
