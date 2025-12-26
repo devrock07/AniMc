@@ -1,6 +1,6 @@
 import generatePfp from "$lib/rendering/generateProfile";
 import changeGradient from "$lib/rendering/gradient";
-import { Canvas } from "skia-canvas";
+import { Canvas } from "@napi-rs/canvas";
 
 export async function get({ params, url }) {
 	if (!params?.username) {
@@ -31,7 +31,7 @@ export async function get({ params, url }) {
 		changeGradient(ctx, colours)
 		await generatePfp(username, ctx);
 
-		const dataURL = await canvas.png;
+		const dataURL = await canvas.toBuffer("image/png");
 		return {
 			status: 200,
 			headers: {

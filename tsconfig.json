@@ -1,6 +1,9 @@
 {
 	"extends": "./.svelte-kit/tsconfig.json",
 	"compilerOptions": {
+		"importsNotUsedAsValues": "remove",
+		"preserveValueImports": false,
+		"ignoreDeprecations": "5.0",
 		"paths": {
 			"$lib": [
 				"src/lib"
@@ -20,6 +23,6 @@
 			"@scripts/*": [
 				"src/lib/scripts/*"
 			]
-		},
+		}
 	}
 }
