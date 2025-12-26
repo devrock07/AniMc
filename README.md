@@ -83,5 +83,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 <div align="center">
-  <sub>Built with ❤️ by <a href="https://github.com/devrock07">devrock07</a></sub>
+  <sub>Built with ❤️ by <a href="https://github.com/devrock07">devrock</a></sub>
 </div>
