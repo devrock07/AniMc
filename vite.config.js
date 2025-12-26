@@ -1,3 +1,4 @@
+// Force restart 2
 import { sveltekit } from '@sveltejs/kit/vite';
 import path from 'path';
 

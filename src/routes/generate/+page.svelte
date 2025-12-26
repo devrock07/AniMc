@@ -5,9 +5,9 @@
     import ArrowButton from "@components/ArrowButton.svelte";
     import Popup from "@components/Popup.svelte";
     import SEO from "@components/SEO.svelte";
-    import changeGradient from "@scripts/gradients";
+    import { changeGradient, drawCustomGradient, drawCustomImage } from "@scripts/gradients";
     import generatePfp from "@scripts/generateProfile";
-    import { mergeCanvases } from "@scripts/utils";
+    import { mergeCanvases, loadImage } from "@scripts/utils";
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
 
@@ -21,6 +21,16 @@
     let gradientCtx: CanvasRenderingContext2D;
     let profileCanvas: HTMLCanvasElement;
     let profileCtx: CanvasRenderingContext2D;
+
+    // Background State
+    let bgMode: "presets" | "gradient" | "upload" = "presets";
+    let color1 = "#00cdac";
+    let color2 = "#02aab0";
+    let customBgImage: HTMLImageElement | null = null;
+
+    // Input Mode State
+    let inputMode: "java" | "upload" = "java";
+    let customSkinData: string | null = null;
 
     onMount(async () => {
         if (!urlSearchParamIGN)
@@ -106,6 +116,63 @@
             await generatePfp(null, profileCtx);
         }
     }
+
+    async function handleFileUpload(e: Event) {
+        const target = e.target as HTMLInputElement;
+        const file = target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const result = e.target?.result as string;
+            customSkinData = result;
+            isLoading = true;
+            await generatePfp(result, profileCtx);
+            isLoading = false;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function handleBgUpload(e: Event) {
+        const target = e.target as HTMLInputElement;
+        const file = target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const result = e.target?.result as string;
+            customBgImage = await loadImage(result);
+            updateBackground();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function updateBackground() {
+        if (bgMode === "presets") {
+            changeGradient(gradientCtx);
+        } else if (bgMode === "gradient") {
+            drawCustomGradient(gradientCtx, [color1, color2]);
+        } else if (bgMode === "upload" && customBgImage) {
+            drawCustomImage(gradientCtx, customBgImage);
+        }
+    }
+
+
+    async function toggleMode(mode: "java" | "upload") {
+        inputMode = mode;
+        if (mode === "java") {
+            await validateInput(null);
+        } else if (customSkinData) {
+            isLoading = true;
+            await generatePfp(customSkinData, profileCtx);
+            isLoading = false;
+        }
+    }
+
+    function setBgMode(mode: "presets" | "gradient" | "upload") {
+        bgMode = mode;
+        updateBackground();
+    }
 </script>
 
 <SEO
@@ -117,25 +184,53 @@
     <div class="glass-card">
         <h2 class="card-title">Profile Generator</h2>
 
+        <div class="mode-toggle">
+            <button
+                class:active={inputMode === "java"}
+                on:click={() => toggleMode("java")}
+            >
+                Java Username
+            </button>
+            <button
+                class:active={inputMode === "upload"}
+                on:click={() => toggleMode("upload")}
+            >
+                Upload Skin
+            </button>
+        </div>
+
         <div class="input-group">
-            <input
-                type="text"
-                spellcheck="false"
-                maxlength="16"
-                pattern="[a-zA-Z0-9_]+"
-                bind:value={username}
-                on:input={validateInput}
-                placeholder="Minecraft Username"
-            />
-            <div class="underline"></div>
+            {#if inputMode === "java"}
+                <input
+                    type="text"
+                    spellcheck="false"
+                    maxlength="16"
+                    pattern="[a-zA-Z0-9_]+"
+                    bind:value={username}
+                    on:input={validateInput}
+                    placeholder="Minecraft Username"
+                />
+                <div class="underline"></div>
+            {:else}
+                <label class="file-upload">
+                    <span>Click to Upload Skin</span>
+                    <input
+                        type="file"
+                        accept=".png"
+                        on:change={handleFileUpload}
+                    />
+                </label>
+            {/if}
         </div>
 
         <div class="preview-area">
             <div class="controls left">
-                <ArrowButton
-                    on:click={() => changeGradient(gradientCtx, "left")}
-                    orientation="left"
-                />
+                {#if bgMode === "presets"}
+                    <ArrowButton
+                        on:click={() => changeGradient(gradientCtx, "left")}
+                        orientation="left"
+                    />
+                {/if}
             </div>
 
             <div class="canvas-wrapper">
@@ -146,11 +241,48 @@
             </div>
 
             <div class="controls right">
-                <ArrowButton
-                    on:click={() => changeGradient(gradientCtx, "right")}
-                    orientation="right"
-                />
+                {#if bgMode === "presets"}
+                    <ArrowButton
+                        on:click={() => changeGradient(gradientCtx, "right")}
+                        orientation="right"
+                    />
+                {/if}
             </div>
+        </div>
+
+        <div class="bg-controls">
+            <div class="mode-toggle">
+                <button
+                    class:active={bgMode === "presets"}
+                    on:click={() => setBgMode("presets")}
+                >
+                    Presets
+                </button>
+                <button
+                    class:active={bgMode === "gradient"}
+                    on:click={() => setBgMode("gradient")}
+                >
+                    Gradient
+                </button>
+                <button
+                    class:active={bgMode === "upload"}
+                    on:click={() => setBgMode("upload")}
+                >
+                    Image
+                </button>
+            </div>
+
+            {#if bgMode === "gradient"}
+                <div class="color-pickers">
+                    <input type="color" bind:value={color1} on:input={updateBackground} />
+                    <input type="color" bind:value={color2} on:input={updateBackground} />
+                </div>
+            {:else if bgMode === "upload"}
+                <label class="file-upload small">
+                    <span>Upload Image</span>
+                    <input type="file" accept="image/*" on:change={handleBgUpload} />
+                </label>
+            {/if}
         </div>
 
         <div class="actions">
@@ -219,12 +351,45 @@
         -webkit-text-fill-color: transparent;
     }
 
+    .mode-toggle {
+        display: flex;
+        gap: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.5rem;
+        border-radius: 12px;
+
+        button {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-family: var(--font-main);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+
+            &.active {
+                background: rgba(255, 255, 255, 0.1);
+                color: var(--primary);
+            }
+
+            &:hover:not(.active) {
+                color: var(--text-main);
+            }
+        }
+    }
+
     .input-group {
         position: relative;
         width: 100%;
         max-width: 300px;
+        min-height: 60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
 
-        input {
+        input[type="text"] {
             width: 100%;
             background: transparent;
             border: none;
@@ -245,6 +410,70 @@
                 color: var(--text-muted);
                 opacity: 0.5;
             }
+        }
+
+        .file-upload {
+            cursor: pointer;
+            padding: 1rem 2rem;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: center;
+
+            &:hover {
+                border-color: var(--primary);
+                color: var(--primary);
+                background: rgba(118, 74, 241, 0.05);
+            }
+
+            input {
+                display: none;
+            }
+        }
+    }
+
+    .bg-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1rem;
+        width: 100%;
+
+        .color-pickers {
+            display: flex;
+            gap: 1rem;
+            
+            input[type="color"] {
+                -webkit-appearance: none;
+                border: none;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                cursor: pointer;
+                background: none;
+                padding: 0;
+                overflow: hidden;
+                
+                &::-webkit-color-swatch-wrapper {
+                    padding: 0; 
+                }
+                
+                &::-webkit-color-swatch {
+                    border: none;
+                    border-radius: 50%;
+                    border: 2px solid var(--glass-border);
+                }
+            }
+        }
+        
+        .file-upload.small {
+            padding: 0.5rem 1rem;
+            min-height: auto;
+            border-width: 1px;
+            font-size: 1.4rem;
         }
     }
 
