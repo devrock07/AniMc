@@ -217,6 +217,52 @@
                 top: 80px;
             }
         }
+
+        @media (max-width: 600px) {
+            height: auto;
+            min-height: 250px;
+            margin-top: 3rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0; /* Overlap handled by margins/transforms */
+            padding-bottom: 2rem;
+
+            .card {
+                position: relative; /* relative for flex flow */
+                width: 130px;
+                height: 130px;
+                box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+                flex-shrink: 0;
+            }
+
+            .card-1 {
+                order: 2; /* Center */
+                top: 0; right: 0; left: 0; /* Reset */
+                z-index: 10;
+                transform: scale(1.15) translateY(-10px);
+                box-shadow: 0 15px 30px rgba(118, 74, 241, 0.4); /* Glow */
+                border: 2px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .card-2 {
+                order: 1; /* Left */
+                top: 0; right: 0; /* Reset */
+                margin-right: -30px; /* Overlap */
+                transform: rotate(-12deg) translateY(10px);
+                filter: brightness(0.8);
+                z-index: 5;
+            }
+
+            .card-3 {
+                order: 3; /* Right */
+                top: 0; left: 0; /* Reset */
+                margin-left: -30px; /* Overlap */
+                transform: rotate(12deg) translateY(10px);
+                filter: brightness(0.8);
+                z-index: 5;
+            }
+        }
     }
 
     @keyframes float {
