@@ -42,6 +42,6 @@
 		"@napi-rs/canvas": "^0.1.44"
 	},
 	"engines": {
-		"node": "18.x"
+		"node": "20.x"
 	}
 }
