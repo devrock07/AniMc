@@ -7,7 +7,29 @@
     let showPopup = false;
 
     onMount(() => {
-        playAudio();
+        // Aggressive autoplay: Start muted (browsers allow this), then unmute
+        audio.muted = true;
+        audio.play().then(() => {
+            isPlaying = true;
+            // Unmute after a short delay
+            setTimeout(() => {
+                audio.muted = false;
+                audio.volume = volume;
+            }, 100);
+        }).catch(() => {
+            // If still blocked, try on first user interaction
+            const playOnInteraction = () => {
+                audio.muted = false;
+                audio.volume = volume;
+                audio.play().then(() => {
+                    isPlaying = true;
+                    document.removeEventListener('click', playOnInteraction);
+                    document.removeEventListener('touchstart', playOnInteraction);
+                });
+            };
+            document.addEventListener('click', playOnInteraction, { once: true });
+            document.addEventListener('touchstart', playOnInteraction, { once: true });
+        });
     });
 
     function togglePlay() {
@@ -15,17 +37,12 @@
             audio.pause();
             isPlaying = false;
         } else {
-            audio.play();
-            isPlaying = true;
+            audio.muted = false;
+            audio.volume = volume;
+            audio.play().then(() => {
+                isPlaying = true;
+            });
         }
-    }
-
-    function playAudio() {
-        audio.play().then(() => {
-            isPlaying = true;
-        }).catch(() => {
-            isPlaying = false;
-        });
     }
 
     function handleVolume(e: Event) {
@@ -40,7 +57,7 @@
 </script>
 
 <!-- Hidden Audio Element -->
-<audio bind:this={audio} src="/music/bg.mp3" loop></audio>
+<audio bind:this={audio} src="/music/bg.mp3" loop autoplay></audio>
 
 <!-- Floating Music Button -->
 <button class="music-btn" on:click={togglePopup} title="Music Controls">

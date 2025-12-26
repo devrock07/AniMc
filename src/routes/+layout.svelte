@@ -1,6 +1,9 @@
 <script lang="ts">
     import "../app.css";
     import MusicPlayer from "$lib/components/MusicPlayer.svelte";
+    import { injectSpeedInsights } from '@vercel/speed-insights';
+
+    injectSpeedInsights();
 
     function copyAddress(bg: string, type: string) {
         navigator.clipboard.writeText(bg);
