@@ -1,13 +1,16 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import SEO from "$lib/components/SEO.svelte";
 
     const names = ["Showcase3", "Showcase4", "Makima"];
     const name = names[Math.floor(Math.random() * names.length)];
 </script>
 
-<svelte:head>
-    <title>AniMc - Home</title>
-</svelte:head>
+<SEO 
+    title="AniMc - Free Minecraft Profile Picture Generator | Create Custom PFPs"
+    description="Create stunning Minecraft profile pictures for free! Generate custom PFPs with gradients, effects, and your Minecraft skin. Perfect for Discord, social media, and gaming profiles."
+    url="https://ani-mc.vercel.app"
+/>
 
 <div class="hero">
     <div class="hero-content">

@@ -28,6 +28,12 @@
     let color2 = "#02aab0";
     let customBgImage: HTMLImageElement | null = null;
 
+<SEO 
+    title="Generate Minecraft PFP - Free Custom Profile Picture Maker | AniMc"
+    description="Create your custom Minecraft profile picture now! Upload your skin, choose gradients, and download your unique PFP for Discord, social media, and gaming profiles. 100% free, no watermark."
+    url="https://ani-mc.vercel.app/generate"
+/>
+
     // Input Mode State
     let inputMode: "java" | "upload" = "java";
     let customSkinData: string | null = null;

@@ -1,0 +1,27 @@
+# AniMc
+
+> A free, open-source Minecraft profile picture generator
+
+## About
+
+AniMc is a web application that allows users to create custom Minecraft profile pictures with various effects and gradients.
+
+## Features
+
+- Generate profile pictures from Minecraft usernames
+- Custom gradient backgrounds
+- Upload custom backgrounds
+- No watermarks
+- 100% free
+
+## Tech Stack
+
+- SvelteKit
+- TypeScript
+- SCSS
+- Vercel
+
+## Links
+
+- Website: https://ani-mc.vercel.app
+- GitHub: https://github.com/devrock07/AniMc
