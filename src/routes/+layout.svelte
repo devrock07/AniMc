@@ -1,7 +1,7 @@
 <script lang="ts">
     import "../app.css";
     import MusicPlayer from "$lib/components/MusicPlayer.svelte";
-    import { injectSpeedInsights } from '@vercel/speed-insights';
+    import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 
     injectSpeedInsights();
 
