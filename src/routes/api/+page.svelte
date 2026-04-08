@@ -40,11 +40,13 @@
         }
     ];
 
+    const siteUrl = "https://animc.d4vrock.xyz";
+
     const examples = [
-        "/api/render/devrock14.png?style=classic&gradient=00cdac-02aab0",
-        "/api/render/devrock14.png?style=mascot&gradient=ffb88c-de6262",
-        "/api/render/devrock14.gif?style=mascot&animation=idle&gradient=84fab0-8fd3f4",
-        "/api/render/devrock14.gif?style=classic&animation=idle&size=512"
+        `${siteUrl}/api/render/devrock14.png?style=classic&gradient=00cdac-02aab0`,
+        `${siteUrl}/api/render/devrock14.png?style=mascot&gradient=ffb88c-de6262`,
+        `${siteUrl}/api/render/devrock14.gif?style=mascot&animation=idle&gradient=84fab0-8fd3f4`,
+        `${siteUrl}/api/render/devrock14.gif?style=classic&animation=idle&size=512`
     ];
 
     const botExample = `const url = \`https://animc.d4vrock.xyz/api/render/\${ign}.gif?style=mascot&animation=idle\`;
@@ -113,7 +115,6 @@ const file = new AttachmentBuilder(bytes, {
         <div class="section-heading">Discord Bot Example</div>
         <pre><code>{botExample}</code></pre>
     </section>
-    <span><a href="/"> return to homepage ↩ </a></span>
 </div>
 
 <style lang="scss">
@@ -124,10 +125,6 @@ const file = new AttachmentBuilder(bytes, {
         display: flex;
         flex-direction: column;
         gap: 2rem;
-
-        > span {
-            display: none;
-        }
     }
 
     .hero {

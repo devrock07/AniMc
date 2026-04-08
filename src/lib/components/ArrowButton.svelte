@@ -23,9 +23,9 @@
         width: 6rem;
         height: 6rem;
 
-        background: var(--glass);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
         border: 1px solid var(--glass-border);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2);
 
         border-radius: 50%;
         transition: all 0.3s ease;
@@ -44,9 +44,9 @@
         &:hover {
             transform: translateX(var(--hoverTransform));
             cursor: pointer;
-            background: var(--primary);
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(118, 74, 241, 0.5);
+            background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 16px 30px rgba(255, 122, 24, 0.26);
             
             p {
                 color: white;

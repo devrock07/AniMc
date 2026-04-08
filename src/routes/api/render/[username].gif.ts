@@ -16,7 +16,7 @@ export async function GET({ params, url }) {
 	try {
 		const options = normalizeRenderOptions({
 			username: params.username,
-			format: "png",
+			format: "gif",
 			origin: url.origin,
 			searchParams: url.searchParams
 		});

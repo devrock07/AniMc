@@ -4,7 +4,7 @@ import { browser } from "$app/environment";
 
 const prefix = browser
 	? "" // Relative path for browser (works on mobile/network)
-	: (process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://ani-mc.vercel.app");
+	: (process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://animc.d4vrock.xyz");
 
 async function generatePfp(username: string, ctx: any) {
 	try {

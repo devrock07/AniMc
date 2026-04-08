@@ -11,18 +11,20 @@
     button {
         width: 14rem;
         height: 5.5rem;
-
-        background: var(--primary);
-        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
-
+        background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+        color: #fff7ed;
         border: none;
-        border-radius: 12px;
-        transition: all 0.3s ease;
+        border-radius: 999px;
+        transition:
+            transform 0.3s ease,
+            box-shadow 0.3s ease,
+            filter 0.3s ease;
+        box-shadow: 0 16px 30px rgba(255, 122, 24, 0.24);
 
         p {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 600;
-            color: #ffffff;
+            color: inherit;
             font-family: var(--font-main);
             margin: 0;
         }
@@ -30,8 +32,8 @@
         &:hover {
             transform: translateY(-0.3rem);
             cursor: pointer;
-            background: var(--primary-hover);
-            box-shadow: 0 6px 15px rgba(118, 74, 241, 0.4);
+            box-shadow: 0 18px 34px rgba(255, 122, 24, 0.32);
+            filter: saturate(1.08);
         }
     }
 

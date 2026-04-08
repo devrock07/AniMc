@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import SEO from "$lib/components/SEO.svelte";
 
     const names = ["Showcase3", "Showcase4", "Makima"];
@@ -9,7 +8,7 @@
 <SEO 
     title="AniMc - Free Minecraft Profile Picture Generator | Create Custom PFPs"
     description="Create stunning Minecraft profile pictures for free! Generate custom PFPs with gradients, effects, and your Minecraft skin. Perfect for Discord, social media, and gaming profiles."
-    url="https://ani-mc.vercel.app"
+    url="https://animc.d4vrock.xyz"
 />
 
 <div class="hero">
@@ -55,9 +54,10 @@
         justify-content: space-between;
         max-width: 1200px;
         margin: 0 auto;
-        padding: 4rem 2rem;
+        padding: 5rem 2rem 6rem;
         min-height: 80vh;
         gap: 4rem;
+        position: relative;
 
         @media (max-width: 900px) {
             flex-direction: column;
@@ -75,41 +75,50 @@
         flex: 1;
         max-width: 600px;
         width: 100%;
+        position: relative;
+        z-index: 1;
 
         .title {
-            font-size: 6rem;
-            line-height: 1.1;
-            font-weight: 700;
-            margin-bottom: 2rem;
+            font-size: clamp(4.8rem, 8vw, 7.2rem);
+            line-height: 0.98;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            margin: 0 0 2.2rem;
             display: flex;
             flex-direction: column;
 
             @media (max-width: 600px) {
-                font-size: 3.6rem;
+                font-size: 4.2rem;
             }
 
             .highlight {
                 color: transparent;
                 background: linear-gradient(
-                    90deg,
+                    135deg,
                     var(--primary),
                     var(--accent-color)
                 );
                 -webkit-background-clip: text;
                 background-clip: text;
+                filter: drop-shadow(0 10px 30px rgba(255, 122, 24, 0.18));
             }
         }
 
         .subtitle {
-            font-size: 1.8rem;
+            font-size: 1.9rem;
             color: var(--text-muted);
-            margin-bottom: 4rem;
-            line-height: 1.6;
+            margin: 0 0 3.4rem;
+            line-height: 1.7;
+            max-width: 54rem;
+
+            @media (max-width: 900px) {
+                margin-inline: auto;
+            }
         }
 
         .cta-group {
             display: flex;
-            gap: 2rem;
+            gap: 1.4rem;
             flex-wrap: wrap;
 
             @media (max-width: 900px) {
@@ -120,33 +129,42 @@
 
     .btn-primary,
     .btn-secondary {
-        padding: 1.5rem 3rem;
-        border-radius: 12px;
+        padding: 1.45rem 2.5rem;
+        border-radius: 999px;
         font-size: 1.6rem;
         font-weight: 600;
         text-decoration: none;
-        transition: all 0.3s ease;
+        transition:
+            transform 0.3s ease,
+            box-shadow 0.3s ease,
+            background 0.3s ease,
+            border-color 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .btn-primary {
-        background: var(--primary);
-        color: white;
-        box-shadow: 0 4px 20px rgba(118, 74, 241, 0.4);
+        background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+        color: #fff7ed;
+        box-shadow: 0 18px 36px rgba(255, 122, 24, 0.24);
 
         &:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(118, 74, 241, 0.6);
+            box-shadow: 0 20px 44px rgba(255, 122, 24, 0.34);
         }
     }
 
     .btn-secondary {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.06);
         color: var(--text-main);
         border: 1px solid var(--glass-border);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
         &:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--primary);
+            background: rgba(53, 208, 255, 0.08);
+            border-color: rgba(53, 208, 255, 0.36);
+            transform: translateY(-2px);
         }
     }
 
@@ -156,19 +174,37 @@
         height: 500px;
         width: 100%;
         max-width: 500px;
+        isolation: isolate;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset: 14% 12%;
+            background: radial-gradient(circle, rgba(53, 208, 255, 0.18), transparent 65%);
+            filter: blur(24px);
+            z-index: 0;
+        }
 
         .card {
             position: absolute;
-            border-radius: 20px;
+            border-radius: 28px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            transition: all 0.5s ease;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.04);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+            transition:
+                transform 0.5s ease,
+                box-shadow 0.5s ease;
 
             img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
                 display: block;
+            }
+
+            &:hover {
+                box-shadow: 0 28px 54px rgba(0, 0, 0, 0.42);
             }
         }
 
@@ -235,7 +271,7 @@
                 position: relative; /* relative for flex flow */
                 width: 130px;
                 height: 130px;
-                box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+                box-shadow: 0 14px 28px rgba(0, 0, 0, 0.3);
                 flex-shrink: 0;
             }
 
@@ -244,7 +280,7 @@
                 top: 0; right: 0; left: 0; /* Reset */
                 z-index: 10;
                 transform: scale(1.15) translateY(-10px);
-                box-shadow: 0 15px 30px rgba(118, 74, 241, 0.4); /* Glow */
+                box-shadow: 0 18px 36px rgba(255, 122, 24, 0.3); /* Glow */
                 border: 2px solid rgba(255, 255, 255, 0.2);
             }
 

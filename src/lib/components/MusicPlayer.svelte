@@ -66,8 +66,24 @@
 
 <!-- Popup Overlay -->
 {#if showPopup}
-    <div class="popup-overlay" on:click={togglePopup}>
-        <div class="popup-content" on:click|stopPropagation>
+    <div
+        class="popup-overlay"
+        on:click={togglePopup}
+        on:keydown={(event) => {
+            if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
+                togglePopup();
+            }
+        }}
+        role="button"
+        tabindex="0"
+        aria-label="Close music controls"
+    >
+        <div
+            class="popup-content"
+            on:click|stopPropagation
+            on:keydown|stopPropagation
+            role="presentation"
+        >
             <h3>Music Controls</h3>
             
             <button class="control-btn" on:click={togglePlay}>
@@ -96,21 +112,25 @@
         position: fixed;
         bottom: 20px;
         right: 20px;
-        width: 50px;
-        height: 50px;
+        width: 54px;
+        height: 54px;
         border-radius: 50%;
         border: none;
-        background: linear-gradient(135deg, var(--primary, #764af1), #9d7bf5);
+        background: linear-gradient(135deg, var(--primary, #ff7a18), var(--accent-color, #35d0ff));
         color: white;
         font-size: 1.5rem;
         cursor: pointer;
-        box-shadow: 0 4px 15px rgba(118, 74, 241, 0.4);
+        box-shadow: 0 18px 32px rgba(0, 0, 0, 0.28);
         z-index: 999;
-        transition: all 0.3s ease;
+        transition:
+            transform 0.3s ease,
+            box-shadow 0.3s ease,
+            filter 0.3s ease;
 
         &:hover {
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(118, 74, 241, 0.6);
+            box-shadow: 0 20px 38px rgba(255, 122, 24, 0.3);
+            filter: saturate(1.08);
         }
 
         &:active {
@@ -142,12 +162,12 @@
     }
 
     .popup-content {
-        background: rgba(18, 18, 18, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: linear-gradient(180deg, rgba(11, 23, 40, 0.96), rgba(9, 19, 34, 0.94));
+        border: 1px solid rgba(255, 255, 255, 0.14);
         border-radius: 20px;
         padding: 30px;
         min-width: 280px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.42);
         animation: slideUp 0.3s ease;
 
         h3 {
@@ -168,7 +188,7 @@
         padding: 12px;
         border: none;
         border-radius: 10px;
-        background: var(--primary, #764af1);
+        background: linear-gradient(135deg, var(--primary, #ff7a18), var(--primary-strong, #ff9f4a));
         color: white;
         font-size: 1rem;
         font-weight: 600;
@@ -177,7 +197,6 @@
         transition: all 0.2s ease;
 
         &:hover {
-            background: var(--primary-hover, #5e35d8);
             transform: translateY(-2px);
         }
 
@@ -200,7 +219,7 @@
         .volume-value {
             text-align: right;
             font-weight: 600;
-            color: var(--primary, #764af1);
+            color: var(--accent-color, #35d0ff);
         }
     }
 
@@ -216,7 +235,7 @@
             -webkit-appearance: none;
             width: 18px;
             height: 18px;
-            background: var(--primary, #764af1);
+            background: var(--primary, #ff7a18);
             border-radius: 50%;
             cursor: pointer;
             transition: transform 0.2s;
@@ -229,7 +248,7 @@
         &::-moz-range-thumb {
             width: 18px;
             height: 18px;
-            background: var(--primary, #764af1);
+            background: var(--primary, #ff7a18);
             border-radius: 50%;
             cursor: pointer;
             border: none;
@@ -256,4 +275,3 @@
         }
     }
 </style>
-

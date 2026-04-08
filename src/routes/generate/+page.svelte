@@ -1,12 +1,13 @@
 <script lang="ts">
     // @ts-ignore
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import SaveButton from "@components/SaveButton.svelte";
     import ArrowButton from "@components/ArrowButton.svelte";
     import Popup from "@components/Popup.svelte";
     import SEO from "@components/SEO.svelte";
     import { changeGradient, drawCustomGradient, drawCustomImage } from "@scripts/gradients";
     import generatePfp from "@scripts/generateProfile";
+    import { exportMascotGif, getAnimationFrames, renderPixelMascot } from "@scripts/pixelMascot";
     import { mergeCanvases, loadImage } from "@scripts/utils";
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
@@ -16,6 +17,12 @@
     let username = "";
     let firefoxPopup = false;
     let isLoading = false;
+    let bgFileName = "";
+    let renderStyle: "classic" | "mascot" = "classic";
+    let animationMode: "none" | "idle" = "idle";
+    let exportFormat: "png" | "gif" = "png";
+    let previewFrame = 0;
+    let previewTimer: ReturnType<typeof setInterval> | null = null;
 
     let gradientCanvas: HTMLCanvasElement;
     let gradientCtx: CanvasRenderingContext2D;
@@ -57,19 +64,82 @@
         profileCtx.scale(16, 16);
         profileCtx.imageSmoothingEnabled = false;
 
-        await updatePfp();
+        await renderCurrentProfile();
     });
 
-    async function updatePfp() {
+    onDestroy(() => {
+        stopPreviewAnimation();
+    });
+
+    async function getActiveSkinSource() {
+        if (inputMode === "upload") {
+            return customSkinData;
+        }
+
+        return username ? `https://minotar.net/skin/${username}.png` : null;
+    }
+
+    function stopPreviewAnimation() {
+        if (previewTimer) {
+            clearInterval(previewTimer);
+            previewTimer = null;
+        }
+    }
+
+    async function drawCurrentFrame() {
+        const skinSource = await getActiveSkinSource();
+
+        try {
+            if (renderStyle === "mascot") {
+                await renderPixelMascot(profileCtx, skinSource, {
+                    frame: previewFrame,
+                    animation: animationMode
+                });
+                return;
+            }
+
+            await generatePfp(skinSource, profileCtx);
+        } catch (error) {
+            await generatePfp(null, profileCtx);
+        }
+    }
+
+    async function syncPreviewAnimation() {
+        stopPreviewAnimation();
+        previewFrame = 0;
+        await drawCurrentFrame();
+
+        if (renderStyle !== "mascot" || animationMode === "none") {
+            return;
+        }
+
+        const frames = getAnimationFrames(animationMode);
+        previewTimer = setInterval(async () => {
+            previewFrame = (previewFrame + 1) % frames.length;
+            await drawCurrentFrame();
+        }, 200);
+    }
+
+    async function renderCurrentProfile() {
         isLoading = true;
-        await generatePfp(
-            `https://minotar.net/skin/${username || "makima"}.png`,
-            profileCtx,
-        );
+        await syncPreviewAnimation();
         isLoading = false;
     }
 
     async function savePicture() {
+        if (renderStyle === "mascot" && exportFormat === "gif") {
+            const skinSource = await getActiveSkinSource();
+            if (!skinSource) return;
+
+            const gifBlob = await exportMascotGif(skinSource, gradientCanvas, animationMode);
+            const link = document.createElement("a");
+            link.download = `AniMc - ${username || "unknown"}.gif`;
+            link.href = URL.createObjectURL(gifBlob);
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+            return;
+        }
+
         const merged = await mergeCanvases([gradientCanvas, profileCanvas]);
         const link = document.createElement("a");
         link.download = `AniMc - ${username || "unknown"}.png`;
@@ -92,22 +162,16 @@
         }
     }
 
-    let timeout;
-    async function validateInput(e) {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    async function validateInput() {
         username = username.replace(/[^a-z0-9_]/gi, "");
 
         try {
-            await generatePfp(
-                `https://minotar.net/skin/${username}.png`,
-                profileCtx,
-            );
+            await renderCurrentProfile();
 
             clearTimeout(timeout);
             timeout = setTimeout(async () => {
-                await generatePfp(
-                    `https://minotar.net/skin/${username}.png`,
-                    profileCtx,
-                );
+                await renderCurrentProfile();
                 goto(`/generate?ign=${username}`, {
                     replaceState: true,
                     keepFocus: true,
@@ -128,7 +192,7 @@
             const result = e.target?.result as string;
             customSkinData = result;
             isLoading = true;
-            await generatePfp(result, profileCtx);
+            await renderCurrentProfile();
             isLoading = false;
         };
         reader.readAsDataURL(file);
@@ -138,6 +202,7 @@
         const target = e.target as HTMLInputElement;
         const file = target.files?.[0];
         if (!file) return;
+        bgFileName = file.name;
 
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -162,11 +227,13 @@
     async function toggleMode(mode: "java" | "upload") {
         inputMode = mode;
         if (mode === "java") {
-            await validateInput(null);
+            await validateInput();
         } else if (customSkinData) {
             isLoading = true;
-            await generatePfp(customSkinData, profileCtx);
+            await renderCurrentProfile();
             isLoading = false;
+        } else {
+            await renderCurrentProfile();
         }
     }
 
@@ -174,13 +241,29 @@
         bgMode = mode;
         updateBackground();
     }
+
+    async function setRenderStyle(style: "classic" | "mascot") {
+        renderStyle = style;
+        if (style === "classic") {
+            exportFormat = "png";
+        }
+        await renderCurrentProfile();
+    }
+
+    async function setAnimationMode(mode: "none" | "idle") {
+        animationMode = mode;
+        if (mode === "none" && exportFormat === "gif" && renderStyle !== "mascot") {
+            exportFormat = "png";
+        }
+        await renderCurrentProfile();
+    }
 </script>
 
 <SEO 
     title="Generate Minecraft PFP - Free Custom Profile Picture Maker | AniMc"
     description="Create your custom Minecraft profile picture now! Upload your skin, choose gradients, and download your unique PFP for Discord, social media, and gaming profiles. 100% free, no watermark."
     username={urlSearchParamIGN || "makima"}
-    url="https://ani-mc.vercel.app/generate"
+    url="https://animc.d4vrock.xyz/generate"
 />
 
 <div class="generate-container">
@@ -202,6 +285,64 @@
             </button>
         </div>
 
+        <div class="style-panel">
+            <div class="panel-heading">Render Style</div>
+            <div class="mode-toggle compact">
+                <button
+                    class:active={renderStyle === "classic"}
+                    on:click={() => setRenderStyle("classic")}
+                >
+                    Classic
+                </button>
+                <button
+                    class:active={renderStyle === "mascot"}
+                    on:click={() => setRenderStyle("mascot")}
+                >
+                    Pixel Mascot
+                </button>
+            </div>
+
+            {#if renderStyle === "mascot"}
+                <div class="style-subgrid">
+                    <div class="stack">
+                        <div class="panel-heading small">Animation</div>
+                        <div class="mode-toggle compact">
+                            <button
+                                class:active={animationMode === "none"}
+                                on:click={() => setAnimationMode("none")}
+                            >
+                                Static
+                            </button>
+                            <button
+                                class:active={animationMode === "idle"}
+                                on:click={() => setAnimationMode("idle")}
+                            >
+                                Idle
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="stack">
+                        <div class="panel-heading small">Download</div>
+                        <div class="mode-toggle compact">
+                            <button
+                                class:active={exportFormat === "png"}
+                                on:click={() => (exportFormat = "png")}
+                            >
+                                PNG
+                            </button>
+                            <button
+                                class:active={exportFormat === "gif"}
+                                on:click={() => (exportFormat = "gif")}
+                            >
+                                GIF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {/if}
+        </div>
+
         <div class="input-group">
             {#if inputMode === "java"}
                 <input
@@ -210,7 +351,7 @@
                     maxlength="16"
                     pattern="[a-zA-Z0-9_]+"
                     bind:value={username}
-                    on:input={validateInput}
+                    on:input={() => validateInput()}
                     placeholder="Minecraft Username"
                 />
                 <div class="underline"></div>
@@ -282,7 +423,7 @@
                 </div>
             {:else if bgMode === "upload"}
                 <label class="file-upload small">
-                    <span>Upload Image</span>
+                    <span>{bgFileName || "Upload Image"}</span>
                     <input type="file" accept="image/*" on:change={handleBgUpload} />
                 </label>
             {/if}
@@ -296,7 +437,7 @@
                 role="button"
                 tabindex="0"
             >
-                <SaveButton text="Download" />
+                <SaveButton text={renderStyle === "mascot" && exportFormat === "gif" ? "Download GIF" : "Download"} />
             </div>
             <div
                 class="btn-wrap"
@@ -305,7 +446,7 @@
                 role="button"
                 tabindex="0"
             >
-                <SaveButton text="Copy" />
+                <SaveButton text={renderStyle === "mascot" && exportFormat === "gif" ? "Copy PNG" : "Copy"} />
             </div>
         </div>
     </div>
@@ -321,22 +462,22 @@
         justify-content: center;
         align-items: center;
         min-height: calc(100vh - 80px - 80px);
-        padding: 2rem;
+        padding: 3rem 2rem 4rem;
     }
 
     .glass-card {
-        background: rgba(18, 18, 18, 0.6);
-        backdrop-filter: blur(16px);
+        background: linear-gradient(180deg, rgba(11, 23, 40, 0.86), rgba(9, 20, 36, 0.78));
+        backdrop-filter: blur(18px);
         border: 1px solid var(--glass-border);
-        border-radius: 24px;
+        border-radius: 28px;
         padding: 4rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        box-shadow: var(--shadow-soft);
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 3rem;
+        gap: 2.4rem;
         width: 100%;
-        max-width: 600px;
+        max-width: 680px;
         animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 
         @media (max-width: 600px) {
@@ -359,67 +500,134 @@
         -webkit-background-clip: text;
         background-clip: text;
         -webkit-text-fill-color: transparent;
+        letter-spacing: -0.04em;
 
         @media (max-width: 600px) {
             font-size: 2.4rem;
         }
     }
 
-    /* ... omitted parts ... */
-    
-    .canvas-wrapper {
-        position: relative;
-        padding: 1rem;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 24px;
-        border: 1px solid var(--glass-border);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        max-width: 100%;
-
-        .canvas-stack {
-            position: relative;
-            width: 100%;
-            max-width: 300px;
-            aspect-ratio: 1;
-            /* height: 300px;  Removed fixed height */
-
-            canvas {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                border-radius: 16px;
-            }
-        }
-    }
-
     .mode-toggle {
         display: flex;
-        gap: 1rem;
+        gap: 0.8rem;
         background: rgba(255, 255, 255, 0.05);
         padding: 0.5rem;
-        border-radius: 12px;
+        border-radius: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
 
         button {
             background: transparent;
             border: none;
             color: var(--text-muted);
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
+            padding: 0.95rem 1.5rem;
+            border-radius: 12px;
             font-family: var(--font-main);
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition:
+                background 0.3s ease,
+                color 0.3s ease,
+                transform 0.3s ease,
+                box-shadow 0.3s ease;
 
             &.active {
-                background: rgba(255, 255, 255, 0.1);
-                color: var(--primary);
+                background: linear-gradient(135deg, rgba(255, 122, 24, 0.18), rgba(53, 208, 255, 0.16));
+                color: var(--text-main);
+                box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
             }
 
             &:hover:not(.active) {
                 color: var(--text-main);
+                background: rgba(255, 255, 255, 0.06);
+                transform: translateY(-1px);
             }
+        }
+    }
+
+    .style-panel {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+        padding: 1.4rem;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .style-subgrid {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+
+        @media (max-width: 640px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        width: 100%;
+    }
+
+    .panel-heading {
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        text-align: center;
+
+        &.small {
+            font-size: 1.15rem;
+        }
+    }
+
+    .mode-toggle.compact {
+        width: 100%;
+
+        button {
+            flex: 1;
+            min-width: 0;
+            padding-inline: 1rem;
+        }
+    }
+
+    .file-upload {
+        cursor: pointer;
+        padding: 1.25rem 2rem;
+        border: 1px dashed rgba(255, 255, 255, 0.24);
+        border-radius: 16px;
+        color: var(--text-muted);
+        transition:
+            border-color 0.3s ease,
+            color 0.3s ease,
+            background 0.3s ease,
+            transform 0.3s ease,
+            box-shadow 0.3s ease;
+        width: 100%;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.04);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+
+        &:hover {
+            border-color: rgba(53, 208, 255, 0.4);
+            color: var(--text-main);
+            background: rgba(53, 208, 255, 0.06);
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
+        }
+
+        input {
+            display: none;
         }
     }
 
@@ -427,52 +635,36 @@
         position: relative;
         width: 100%;
         max-width: 300px;
-        min-height: 60px;
+        min-height: 6rem;
         display: flex;
         justify-content: center;
         align-items: center;
 
         input[type="text"] {
             width: 100%;
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-            padding: 1rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.2rem 1.4rem;
             font-size: 2rem;
             text-align: center;
             color: var(--text-main);
             font-family: var(--font-main);
-            transition: all 0.3s ease;
+            transition:
+                border-color 0.3s ease,
+                background 0.3s ease,
+                box-shadow 0.3s ease;
 
             &:focus {
                 outline: none;
-                border-color: var(--primary);
+                border-color: rgba(53, 208, 255, 0.4);
+                background: rgba(255, 255, 255, 0.06);
+                box-shadow: 0 0 0 5px rgba(53, 208, 255, 0.08);
             }
 
             &::placeholder {
                 color: var(--text-muted);
                 opacity: 0.5;
-            }
-        }
-
-        .file-upload {
-            cursor: pointer;
-            padding: 1rem 2rem;
-            border: 2px dashed rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            color: var(--text-muted);
-            transition: all 0.3s ease;
-            width: 100%;
-            text-align: center;
-
-            &:hover {
-                border-color: var(--primary);
-                color: var(--primary);
-                background: rgba(118, 74, 241, 0.05);
-            }
-
-            input {
-                display: none;
             }
         }
     }
@@ -492,13 +684,14 @@
             input[type="color"] {
                 -webkit-appearance: none;
                 border: none;
-                width: 40px;
-                height: 40px;
+                width: 4.6rem;
+                height: 4.6rem;
                 border-radius: 50%;
                 cursor: pointer;
                 background: none;
                 padding: 0;
                 overflow: hidden;
+                box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
                 
                 &::-webkit-color-swatch-wrapper {
                     padding: 0; 
@@ -513,10 +706,26 @@
         }
         
         .file-upload.small {
-            padding: 0.5rem 1rem;
+            min-width: min(100%, 26rem);
+            padding: 1rem 1.4rem;
             min-height: auto;
             border-width: 1px;
             font-size: 1.4rem;
+            border-style: solid;
+            border-color: rgba(255, 255, 255, 0.1);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.04));
+            color: var(--text-main);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                0 12px 24px rgba(0, 0, 0, 0.16);
+
+            span {
+                display: block;
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
         }
     }
 
@@ -524,19 +733,24 @@
         display: flex;
         align-items: center;
         gap: 2rem;
+        width: 100%;
+        justify-content: center;
 
         @media (max-width: 600px) {
             flex-direction: column;
+            gap: 1.2rem;
         }
     }
 
     .canvas-wrapper {
         position: relative;
-        padding: 1rem;
-        background: rgba(255, 255, 255, 0.05);
+        padding: 1.1rem;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
         border-radius: 24px;
         border: 1px solid var(--glass-border);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.06),
+            0 18px 40px rgba(0, 0, 0, 0.26);
         max-width: 100%;
 
         .canvas-stack {
@@ -554,20 +768,34 @@
                 width: 100%;
                 height: 100%;
                 border-radius: 16px;
-                object-fit: contain; /* Ensure image fits */
+                object-fit: contain;
+                image-rendering: pixelated;
+                image-rendering: crisp-edges;
             }
         }
     }
 
     .actions {
         display: flex;
-        gap: 2rem;
+        gap: 1.2rem;
         margin-top: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     // Wrapper to catch clicks for the component
     .btn-wrap {
         cursor: pointer;
+    }
+
+    .controls {
+        min-width: 6rem;
+        display: flex;
+        justify-content: center;
+
+        @media (max-width: 600px) {
+            min-width: 0;
+        }
     }
 
     @keyframes slideUp {
