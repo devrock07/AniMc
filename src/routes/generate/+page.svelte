@@ -8,15 +8,24 @@
     import { changeGradient, drawCustomGradient, drawCustomImage } from "@scripts/gradients";
     import generatePfp from "@scripts/generateProfile";
     import { exportMascotGif, getAnimationFrames, renderPixelMascot } from "@scripts/pixelMascot";
+    import type {
+        CapeStyle,
+        FrameStyle,
+        ItemStyle,
+        OrnamentStyle
+    } from "@scripts/pixelMascot";
     import { mergeCanvases, loadImage } from "@scripts/utils";
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
 
     const urlSearchParamIGN = $page.url.searchParams.get("ign") || null;
+    const ornamentOptions: OrnamentStyle[] = ["none", "sparkles", "halo", "crown"];
+    const frameOptions: FrameStyle[] = ["none", "pixel", "glass", "studio"];
+    const capeOptions: CapeStyle[] = ["none", "classic", "royal"];
+    const itemOptions: ItemStyle[] = ["none", "sword", "wand", "pickaxe"];
 
     let username = "";
     let firefoxPopup = false;
-    let isLoading = false;
     let bgFileName = "";
     let renderStyle: "classic" | "mascot" = "classic";
     let animationMode: "none" | "idle" = "idle";
@@ -30,7 +39,7 @@
     let profileCtx: CanvasRenderingContext2D;
 
     // Background State
-    let bgMode: "presets" | "gradient" | "upload" = "presets";
+    let bgMode: "presets" | "gradient" | "upload" | "none" = "presets";
     let color1 = "#00cdac";
     let color2 = "#02aab0";
     let customBgImage: HTMLImageElement | null = null;
@@ -38,6 +47,19 @@
     // Input Mode State
     let inputMode: "java" | "upload" = "java";
     let customSkinData: string | null = null;
+    let showHat = true;
+    let ornamentStyle: OrnamentStyle = "none";
+    let frameStyle: FrameStyle = "none";
+    let capeStyle: CapeStyle = "none";
+    let heldItem: ItemStyle = "none";
+    let mascotScale = 1;
+    let mascotRotate = 0;
+    let mascotOffsetX = 0;
+    let mascotOffsetY = 0;
+    let itemOffsetX = 0;
+    let itemOffsetY = 0;
+    let ornamentOffsetX = 0;
+    let ornamentOffsetY = 0;
 
 
     onMount(async () => {
@@ -93,7 +115,21 @@
             if (renderStyle === "mascot") {
                 await renderPixelMascot(profileCtx, skinSource, {
                     frame: previewFrame,
-                    animation: animationMode
+                    animation: animationMode,
+                    showHat,
+                    ornament: ornamentStyle,
+                    frameStyle,
+                    cape: capeStyle,
+                    item: heldItem,
+                    scale: mascotScale,
+                    rotate: mascotRotate,
+                    offsetX: mascotOffsetX,
+                    offsetY: mascotOffsetY,
+                    itemOffsetX,
+                    itemOffsetY,
+                    ornamentOffsetX,
+                    ornamentOffsetY,
+                    drawShadow: bgMode !== "none"
                 });
                 return;
             }
@@ -121,9 +157,7 @@
     }
 
     async function renderCurrentProfile() {
-        isLoading = true;
         await syncPreviewAnimation();
-        isLoading = false;
     }
 
     async function savePicture() {
@@ -131,7 +165,28 @@
             const skinSource = await getActiveSkinSource();
             if (!skinSource) return;
 
-            const gifBlob = await exportMascotGif(skinSource, gradientCanvas, animationMode);
+            const gifBlob = await exportMascotGif(
+                skinSource,
+                bgMode === "none" ? null : gradientCanvas,
+                {
+                    animation: animationMode,
+                    showHat,
+                    ornament: ornamentStyle,
+                    frameStyle,
+                    cape: capeStyle,
+                    item: heldItem,
+                    scale: mascotScale,
+                    rotate: mascotRotate,
+                    offsetX: mascotOffsetX,
+                    offsetY: mascotOffsetY,
+                    itemOffsetX,
+                    itemOffsetY,
+                    ornamentOffsetX,
+                    ornamentOffsetY,
+                    drawShadow: bgMode !== "none",
+                    outputSize: profileCanvas.width
+                }
+            );
             const link = document.createElement("a");
             link.download = `AniMc - ${username || "unknown"}.gif`;
             link.href = URL.createObjectURL(gifBlob);
@@ -140,7 +195,7 @@
             return;
         }
 
-        const merged = await mergeCanvases([gradientCanvas, profileCanvas]);
+        const merged = await buildExportCanvas();
         const link = document.createElement("a");
         link.download = `AniMc - ${username || "unknown"}.png`;
         link.href = merged.toDataURL();
@@ -154,7 +209,7 @@
                 setTimeout(() => (firefoxPopup = false), 5000);
             }
         } else {
-            const merged = await mergeCanvases([gradientCanvas, profileCanvas]);
+            const merged = await buildExportCanvas();
             merged.toBlob(function (blob) {
                 const item = new ClipboardItem({ "image/png": blob });
                 navigator.clipboard.write([item]);
@@ -191,9 +246,7 @@
         reader.onload = async (e) => {
             const result = e.target?.result as string;
             customSkinData = result;
-            isLoading = true;
             await renderCurrentProfile();
-            isLoading = false;
         };
         reader.readAsDataURL(file);
     }
@@ -209,37 +262,40 @@
             const result = e.target?.result as string;
             customBgImage = await loadImage(result);
             updateBackground();
+            await renderCurrentProfile();
         };
         reader.readAsDataURL(file);
     }
 
     function updateBackground() {
+        if (!gradientCtx) return;
+
         if (bgMode === "presets") {
             changeGradient(gradientCtx);
         } else if (bgMode === "gradient") {
             drawCustomGradient(gradientCtx, [color1, color2]);
         } else if (bgMode === "upload" && customBgImage) {
             drawCustomImage(gradientCtx, customBgImage);
+        } else {
+            gradientCtx.clearRect(0, 0, 20, 20);
         }
     }
-
 
     async function toggleMode(mode: "java" | "upload") {
         inputMode = mode;
         if (mode === "java") {
             await validateInput();
         } else if (customSkinData) {
-            isLoading = true;
             await renderCurrentProfile();
-            isLoading = false;
         } else {
             await renderCurrentProfile();
         }
     }
 
-    function setBgMode(mode: "presets" | "gradient" | "upload") {
+    async function setBgMode(mode: "presets" | "gradient" | "upload" | "none") {
         bgMode = mode;
         updateBackground();
+        await renderCurrentProfile();
     }
 
     async function setRenderStyle(style: "classic" | "mascot") {
@@ -255,6 +311,24 @@
         if (mode === "none" && exportFormat === "gif" && renderStyle !== "mascot") {
             exportFormat = "png";
         }
+        await renderCurrentProfile();
+    }
+
+    async function buildExportCanvas() {
+        if (bgMode === "none") {
+            const canvas = document.createElement("canvas");
+            canvas.width = profileCanvas.width;
+            canvas.height = profileCanvas.height;
+            const ctx = canvas.getContext("2d")!;
+            ctx.drawImage(profileCanvas, 0, 0);
+            return canvas;
+        }
+
+        return mergeCanvases([gradientCanvas, profileCanvas]);
+    }
+
+    async function refreshMascotRender() {
+        if (renderStyle !== "mascot") return;
         await renderCurrentProfile();
     }
 </script>
@@ -397,6 +471,12 @@
         <div class="bg-controls">
             <div class="mode-toggle">
                 <button
+                    class:active={bgMode === "none"}
+                    on:click={() => setBgMode("none")}
+                >
+                    No BG
+                </button>
+                <button
                     class:active={bgMode === "presets"}
                     on:click={() => setBgMode("presets")}
                 >
@@ -418,8 +498,22 @@
 
             {#if bgMode === "gradient"}
                 <div class="color-pickers">
-                    <input type="color" bind:value={color1} on:input={updateBackground} />
-                    <input type="color" bind:value={color2} on:input={updateBackground} />
+                    <input
+                        type="color"
+                        bind:value={color1}
+                        on:input={() => {
+                            updateBackground();
+                            refreshMascotRender();
+                        }}
+                    />
+                    <input
+                        type="color"
+                        bind:value={color2}
+                        on:input={() => {
+                            updateBackground();
+                            refreshMascotRender();
+                        }}
+                    />
                 </div>
             {:else if bgMode === "upload"}
                 <label class="file-upload small">
@@ -428,6 +522,197 @@
                 </label>
             {/if}
         </div>
+
+        {#if renderStyle === "mascot"}
+            <div class="advanced-panel">
+                <div class="panel-heading">Mascot Styling</div>
+
+                <div class="advanced-grid">
+                    <label class="field">
+                        <span>Helmet Layer</span>
+                        <div class="mode-toggle compact">
+                            <button
+                                class:active={showHat}
+                                on:click={() => {
+                                    showHat = true;
+                                    refreshMascotRender();
+                                }}
+                            >
+                                On
+                            </button>
+                            <button
+                                class:active={!showHat}
+                                on:click={() => {
+                                    showHat = false;
+                                    refreshMascotRender();
+                                }}
+                            >
+                                Off
+                            </button>
+                        </div>
+                    </label>
+
+                    <label class="field">
+                        <span>Frame</span>
+                        <select bind:value={frameStyle} on:change={refreshMascotRender}>
+                            {#each frameOptions as option}
+                                <option value={option}>{option}</option>
+                            {/each}
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Ornament</span>
+                        <select bind:value={ornamentStyle} on:change={refreshMascotRender}>
+                            {#each ornamentOptions as option}
+                                <option value={option}>{option}</option>
+                            {/each}
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Cape</span>
+                        <select bind:value={capeStyle} on:change={refreshMascotRender}>
+                            {#each capeOptions as option}
+                                <option value={option}>{option}</option>
+                            {/each}
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Item</span>
+                        <select bind:value={heldItem} on:change={refreshMascotRender}>
+                            {#each itemOptions as option}
+                                <option value={option}>{option}</option>
+                            {/each}
+                        </select>
+                    </label>
+                </div>
+
+                <div class="panel-heading small">Pose Controls</div>
+                <div class="slider-grid">
+                    <label class="slider-field">
+                        <div class="slider-meta">
+                            <span>Scale</span>
+                            <strong>{mascotScale.toFixed(2)}</strong>
+                        </div>
+                        <input
+                            type="range"
+                            min="0.75"
+                            max="1.40"
+                            step="0.05"
+                            bind:value={mascotScale}
+                            on:input={refreshMascotRender}
+                        />
+                    </label>
+
+                    <label class="slider-field">
+                        <div class="slider-meta">
+                            <span>Rotate</span>
+                            <strong>{mascotRotate} deg</strong>
+                        </div>
+                        <input
+                            type="range"
+                            min="-20"
+                            max="20"
+                            step="1"
+                            bind:value={mascotRotate}
+                            on:input={refreshMascotRender}
+                        />
+                    </label>
+
+                    <label class="slider-field">
+                        <div class="slider-meta">
+                            <span>Item X</span>
+                            <strong>{itemOffsetX}px</strong>
+                        </div>
+                        <input
+                            type="range"
+                            min="-5"
+                            max="5"
+                            step="1"
+                            bind:value={itemOffsetX}
+                            on:input={refreshMascotRender}
+                        />
+                    </label>
+
+                    <label class="slider-field">
+                        <div class="slider-meta">
+                            <span>Item Y</span>
+                            <strong>{itemOffsetY}px</strong>
+                        </div>
+                        <input
+                            type="range"
+                            min="-5"
+                            max="5"
+                            step="1"
+                            bind:value={itemOffsetY}
+                            on:input={refreshMascotRender}
+                        />
+                    </label>
+
+                    <label class="slider-field">
+                        <div class="slider-meta">
+                            <span>Ornament X</span>
+                            <strong>{ornamentOffsetX}px</strong>
+                        </div>
+                        <input
+                            type="range"
+                            min="-5"
+                            max="5"
+                            step="1"
+                            bind:value={ornamentOffsetX}
+                            on:input={refreshMascotRender}
+                        />
+                    </label>
+
+                    <label class="slider-field">
+                        <div class="slider-meta">
+                            <span>Ornament Y</span>
+                            <strong>{ornamentOffsetY}px</strong>
+                        </div>
+                        <input
+                            type="range"
+                            min="-5"
+                            max="5"
+                            step="1"
+                            bind:value={ornamentOffsetY}
+                            on:input={refreshMascotRender}
+                        />
+                    </label>
+
+                    <label class="slider-field">
+                        <div class="slider-meta">
+                            <span>Position X</span>
+                            <strong>{mascotOffsetX}px</strong>
+                        </div>
+                        <input
+                            type="range"
+                            min="-4"
+                            max="4"
+                            step="1"
+                            bind:value={mascotOffsetX}
+                            on:input={refreshMascotRender}
+                        />
+                    </label>
+
+                    <label class="slider-field">
+                        <div class="slider-meta">
+                            <span>Position Y</span>
+                            <strong>{mascotOffsetY}px</strong>
+                        </div>
+                        <input
+                            type="range"
+                            min="-4"
+                            max="4"
+                            step="1"
+                            bind:value={mascotOffsetY}
+                            on:input={refreshMascotRender}
+                        />
+                    </label>
+                </div>
+            </div>
+        {/if}
 
         <div class="actions">
             <div
@@ -477,7 +762,7 @@
         align-items: center;
         gap: 2.4rem;
         width: 100%;
-        max-width: 680px;
+        max-width: 760px;
         animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 
         @media (max-width: 600px) {
@@ -565,6 +850,98 @@
 
         @media (max-width: 640px) {
             grid-template-columns: 1fr;
+        }
+    }
+
+    .advanced-panel {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+        padding: 1.6rem;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .advanced-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+
+        @media (max-width: 640px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .field,
+    .slider-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+
+        span {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+    }
+
+    .field select {
+        width: 100%;
+        padding: 1rem 1.15rem;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(7, 17, 31, 0.9);
+        color: var(--text-main);
+        font-family: var(--font-main);
+        font-size: 1.45rem;
+        text-transform: capitalize;
+        outline: none;
+        transition:
+            border-color 0.25s ease,
+            background 0.25s ease,
+            box-shadow 0.25s ease;
+
+        &:focus {
+            border-color: rgba(53, 208, 255, 0.38);
+            box-shadow: 0 0 0 4px rgba(53, 208, 255, 0.08);
+        }
+    }
+
+    .slider-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem 1.2rem;
+
+        @media (max-width: 640px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .slider-field {
+        padding: 1rem 1.1rem;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-color);
+        }
+    }
+
+    .slider-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+
+        strong {
+            font-size: 1.35rem;
+            color: var(--text-main);
         }
     }
 

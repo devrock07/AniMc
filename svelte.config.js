@@ -9,7 +9,10 @@ const config = {
 	preprocess: preprocess(),
 
 	kit: {
-		adapter: adapter({ out: "build" })
+		adapter: adapter({ out: "build" }),
+		csrf: {
+			checkOrigin: false
+		}
 	}
 };
 

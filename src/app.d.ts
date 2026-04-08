@@ -11,3 +11,4 @@ declare namespace App {
 }
 
 declare module "gifenc";
+declare module "gifenc/dist/gifenc.esm.js";
