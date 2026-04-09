@@ -1,87 +1,149 @@
-<div align="center">
+# AniMc
 
-  <img src="static/PFP/Makima.png" alt="AniMc Logo" width="120" style="border-radius: 24px; box-shadow: 0 8px 32px rgba(118, 74, 241, 0.5);" />
+Minecraft profile picture and pixel mascot generator with a built-in public render API.
 
-  # AniMc
-  **The Ultimate Minecraft Profile Picture Generator**
+Live site: [animc.d4vrock.xyz](https://animc.d4vrock.xyz)  
+API docs: [animc.d4vrock.xyz/api](https://animc.d4vrock.xyz/api)
 
-  [![Svelte](https://img.shields.io/badge/Svelte-4A4A55?style=for-the-badge&logo=svelte&logoColor=FF3E00)](https://svelte.dev)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![Vite](https://img.shields.io/badge/Vite-B33542?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+## Overview
 
-  <p align="center">
-    Create stunning, 3D-rendered Minecraft profile pictures in seconds.<br />
-    <b>Free. Open Source. No Watermarks.</b>
-  </p>
+AniMc started as a Minecraft PFP generator and now also supports pixel mascot renders, animated mascot GIF exports, skin uploads, cosmetic styling, and a public API that other apps can call directly.
 
-  [Start Generating](http://localhost:5173/generate) • [Report Bug](https://github.com/devrock07/AniMc/issues)
+The app is built with SvelteKit and includes both:
 
-</div>
+- a user-facing generator at `/generate`
+- an image API for bots, dashboards, Discord commands, and other integrations
 
----
+## Features
 
-## ✨ Features
+- Classic Minecraft profile picture generation
+- Pixel mascot rendering with animated idle GIF export
+- Java username input and direct skin upload support
+- Background presets, custom gradients, uploaded images, and transparent exports
+- Mascot styling controls:
+  - ornaments
+  - frames
+  - capes
+  - held items
+  - hat / helmet layer toggle
+  - scale, rotation, and position controls
+  - separate item and ornament position adjustment
+- Public API with CORS enabled
+- PNG and mascot GIF rendering endpoints
+- Upload-based API rendering via `POST /api/render`
+- Responsive UI for desktop and mobile
 
-- **🚀 Instant Generation**: Tye in any Java username and get a PFP instantly.
-- **📂 Skin Upload**: Support for Bedrock, Cracked, or custom skin files (`.png`).
-- **🎨 Custom Backgrounds**:
-    - **Presets**: Choose from 15+ curated gradients.
-    - **Gradient Maker**: Create your own 2-color linear gradients.
-    - **Image Upload**: Use any image as your background.
-- **💎 Premium UI**: A sleek, dark-themed glassmorphism interface.
-- **📱 Fully Responsive**: Works perfectly on desktop, tablet, and mobile.
+## API Highlights
 
-## 📸 Screenshots
+Current API supports:
 
-![Generator UI](file:///C:/Users/kanan/.gemini/antigravity/brain/0641bf1b-2d08-4a81-beb5-c135903f461f/.system_generated/click_feedback/click_feedback_1766730629963.png)
+- `GET /api/render/[username].png`
+- `GET /api/render/[username].gif`
+- `POST /api/render`
+- `GET /api/pfp/[username].png`
 
-## 🛠️ Quick Start
+Useful query/body options include:
 
-Clone the repository and start the dev server:
+- `style=classic|mascot`
+- `animation=none|idle`
+- `background=gradient|transparent|image`
+- `gradient=84fab0-8fd3f4`
+- `frame=none|pixel|glass|studio`
+- `ornament=none|sparkles|halo|crown`
+- `cape=none|classic|royal`
+- `item=none|sword|wand|pickaxe`
+- `hat=true|false`
+- `scale`, `rotate`, `x`, `y`
+- `itemX`, `itemY`, `ornamentX`, `ornamentY`
+
+Important:
+
+- GIF output is mascot-only
+- classic renders should be requested as PNG
+
+Example requests:
+
+```txt
+https://animc.d4vrock.xyz/api/render/devrock14.png?style=classic&background=transparent
+https://animc.d4vrock.xyz/api/render/devrock14.png?style=mascot&frame=pixel&ornament=sparkles
+https://animc.d4vrock.xyz/api/render/devrock14.gif?style=mascot&animation=idle&item=sword
+```
+
+## Local Development
+
+### Requirements
+
+- Node.js 20
+- npm
+
+### Setup
 
 ```bash
-# Clone the repo
 git clone https://github.com/devrock07/AniMc.git
-
-# Install dependencies
+cd AniMc
 npm install
-
-# Start development server
 npm run dev
 ```
 
-## 🗺️ Roadmap
+Open the local app at the URL printed by Vite, usually:
 
-- [x] **Core Generator**: Java & Upload support
-- [x] **Customization**: Backgrounds, Gradients, Images
-- [x] **Mobile Support**: Fully responsive design
-- [ ] **3D Adjustments**: Rotate and position the character
-- [ ] **Layers**: Toggle helmet/hat layers
-- [ ] **Cosmetics**: Add capes or items
+```txt
+http://localhost:5173
+```
 
-## 🤝 Contributing
+## Scripts
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+```bash
+npm run dev
+npm run check
+npm run build
+npm run preview
+npm run format
+npm run lint
+```
 
-## 💰 Support
+## Tech Stack
 
-If you love AniMc, consider supporting the development!
+- SvelteKit
+- Svelte
+- TypeScript
+- Vite
+- Sass
+- `@napi-rs/canvas`
+- `gifenc`
+- Vercel adapter
 
-<div align="center">
+## Project Status
 
-  | Currency | Address |
-  | :--- | :--- |
-  | **LTC** | `LcPnFkTa5UTav5Ue3dM6GdLh7LpTm47JZx` |
-  | **BTC** | `bc1qdumjz2sex6uykuffnlrxwr6qlj27euvaee7rl8` |
+Current shipped work includes:
 
-</div>
+- Java username and upload support
+- backgrounds, gradients, and image uploads
+- mobile support
+- hat layer toggle
+- ornaments, frames, capes, and held items
+- pose and accessory position controls
+- public PNG and mascot GIF API
 
-## 📄 License
+Still open for future polish:
 
-Distributed under the MIT License. See `LICENSE` for more information.
+- deeper 3D character rendering
+- more item and ornament presets
+- more scene/background themes
+- rate limiting or API key controls for public usage
 
----
-<div align="center">
-  <sub>Built with ❤️ by <a href="https://github.com/devrock07">devrock</a></sub>
-</div>
+## Contributing
+
+Issues and pull requests are welcome.
+
+If you want to contribute, a good flow is:
+
+```bash
+npm install
+npm run check
+npm run build
+```
+
+## License
+
+MIT. See [LICENSE](LICENSE).
