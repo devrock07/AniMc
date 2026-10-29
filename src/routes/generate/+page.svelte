@@ -108,7 +108,29 @@
         }
     }
 
+    // Draws are async (skin loading), so overlapping ones could finish out of order and
+    // leave a stale image on screen. Run one at a time and coalesce requests made meanwhile.
+    let drawing = false;
+    let drawPending = false;
+
     async function drawCurrentFrame() {
+        if (drawing) {
+            drawPending = true;
+            return;
+        }
+
+        drawing = true;
+        try {
+            do {
+                drawPending = false;
+                await drawFrameNow();
+            } while (drawPending);
+        } finally {
+            drawing = false;
+        }
+    }
+
+    async function drawFrameNow() {
         const skinSource = await getActiveSkinSource();
 
         try {
@@ -202,39 +224,56 @@
         link.click();
     }
 
+    function showClipboardUnsupported() {
+        if (!firefoxPopup) {
+            firefoxPopup = true;
+            setTimeout(() => (firefoxPopup = false), 5000);
+        }
+    }
+
     async function copyPicture() {
-        if (navigator.userAgent.indexOf("Firefox") != -1) {
-            if (!firefoxPopup) {
-                firefoxPopup = true;
-                setTimeout(() => (firefoxPopup = false), 5000);
-            }
-        } else {
-            const merged = await buildExportCanvas();
-            merged.toBlob(function (blob) {
-                const item = new ClipboardItem({ "image/png": blob });
-                navigator.clipboard.write([item]);
-            });
+        // Feature-detect rather than sniff the browser: newer Firefox supports this fine.
+        if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) {
+            showClipboardUnsupported();
+            return;
+        }
+
+        const merged = await buildExportCanvas();
+        // Passing a promise keeps Safari happy (it requires the write to start inside the click).
+        const blob = new Promise<Blob>((resolve, reject) =>
+            merged.toBlob((b) => (b ? resolve(b) : reject(new Error("Could not encode image"))), "image/png")
+        );
+
+        try {
+            await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+        } catch (error) {
+            console.error("Copy failed:", error);
+            showClipboardUnsupported();
+        }
+    }
+
+    // Only act on Enter/Space so tabbing past the buttons doesn't trigger them.
+    function onActivateKey(event: KeyboardEvent, action: () => void) {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            action();
         }
     }
 
     let timeout: ReturnType<typeof setTimeout> | null = null;
-    async function validateInput() {
+    function validateInput() {
         username = username.replace(/[^a-z0-9_]/gi, "");
 
-        try {
+        // Wait for typing to pause before fetching the skin, instead of once per keystroke.
+        clearTimeout(timeout);
+        timeout = setTimeout(async () => {
             await renderCurrentProfile();
-
-            clearTimeout(timeout);
-            timeout = setTimeout(async () => {
-                await renderCurrentProfile();
-                goto(`/generate?ign=${username}`, {
-                    replaceState: true,
-                    keepFocus: true,
-                });
-            }, 300);
-        } catch (e) {
-            await generatePfp(null, profileCtx);
-        }
+            goto(`/generate?ign=${username}`, {
+                replaceState: true,
+                keepFocus: true,
+                noScroll: true,
+            });
+        }, 300);
     }
 
     async function handleFileUpload(e: Event) {
@@ -284,7 +323,7 @@
     async function toggleMode(mode: "java" | "upload") {
         inputMode = mode;
         if (mode === "java") {
-            await validateInput();
+            validateInput();
         } else if (customSkinData) {
             await renderCurrentProfile();
         } else {
@@ -718,7 +757,7 @@
             <div
                 class="btn-wrap"
                 on:click={savePicture}
-                on:keydown={savePicture}
+                on:keydown={(e) => onActivateKey(e, savePicture)}
                 role="button"
                 tabindex="0"
             >
@@ -727,7 +766,7 @@
             <div
                 class="btn-wrap"
                 on:click={copyPicture}
-                on:keydown={copyPicture}
+                on:keydown={(e) => onActivateKey(e, copyPicture)}
                 role="button"
                 tabindex="0"
             >
@@ -737,7 +776,7 @@
     </div>
 
     {#if firefoxPopup}
-        <Popup type="failed" message="Firefox does not support this :(" />
+        <Popup type="failed" message="Copying images isn't supported in this browser :(" />
     {/if}
 </div>
 

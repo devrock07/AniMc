@@ -1,12 +1,12 @@
-import { loadImage } from "./utils";
+import { loadImage, normalizeSkin } from "./utils";
 
 async function generatePfp(skin: string, ctx: CanvasRenderingContext2D) {
 	try {
 		if (!skin) {
-			drawFailed(ctx);
+			await drawFailed(ctx);
 			return;
 		}
-		const skinImage = await loadImage(skin);
+		const skinImage = normalizeSkin(await loadImage(skin));
 		const shading = await loadImage("/20x20pshading.png");
 		const backdrop = await loadImage("/backdropshading.png");
 
@@ -43,7 +43,7 @@ async function generatePfp(skin: string, ctx: CanvasRenderingContext2D) {
 
 		ctx.drawImage(shading, 0, 0, 20, 20);
 	} catch (e) {
-		drawFailed(ctx);
+		await drawFailed(ctx);
 	}
 }
 

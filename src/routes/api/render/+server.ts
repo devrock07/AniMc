@@ -1,36 +1,10 @@
-import {
-    buildCorsHeaders,
-    normalizeBodyRenderOptions,
-    PublicRenderError,
-    renderPublicImage
-} from "$lib/rendering/publicRender";
+import type { RequestHandler } from "@sveltejs/kit";
+import { preflight, respondWithImage } from "$lib/rendering/http";
+import { normalizeBodyRenderOptions, renderPublicImage } from "$lib/rendering/publicRender";
 
-export function OPTIONS() {
-    return new Response(null, {
-        status: 204,
-        headers: buildCorsHeaders(undefined, "no-store")
-    });
-}
+export const OPTIONS = preflight("no-store");
 
-export async function POST({ request, url }) {
-    try {
-        const options = await normalizeBodyRenderOptions({
-            request,
-            origin: url.origin
-        });
-        const result = await renderPublicImage(options);
-
-        return new Response(result.body as BodyInit, {
-            status: 200,
-            headers: buildCorsHeaders(result.contentType, "no-store")
-        });
-    } catch (error) {
-        const status = error instanceof PublicRenderError ? error.status : 500;
-        const message = error instanceof Error ? error.message : "Internal Server Error";
-
-        return new Response(JSON.stringify({ message }), {
-            status,
-            headers: buildCorsHeaders("application/json", "no-store")
-        });
-    }
-}
+export const POST: RequestHandler = ({ request, url }) =>
+	respondWithImage("no-store", async () =>
+		renderPublicImage(await normalizeBodyRenderOptions({ request, origin: url.origin }))
+	);
