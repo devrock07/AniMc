@@ -1,5 +1,5 @@
 import { GIFEncoder, applyPalette, quantize } from "gifenc/dist/gifenc.esm.js";
-import { loadImage } from "./utils";
+import { loadImage, normalizeSkin } from "./utils";
 
 type AnimationMode = "none" | "idle";
 type OrnamentStyle = "none" | "sparkles" | "halo" | "crown";
@@ -68,7 +68,10 @@ function getAnimationFrames(animation: AnimationMode): FrameSpec[] {
 
 async function getCachedSkinImage(src: string): Promise<HTMLImageElement> {
     if (!SKIN_CACHE.has(src)) {
-        SKIN_CACHE.set(src, loadImage(src));
+        const pending = loadImage(src);
+        // Don't remember failures, so a skin that failed once (e.g. a network blip) can load later.
+        pending.catch(() => SKIN_CACHE.delete(src));
+        SKIN_CACHE.set(src, pending);
     }
 
     return SKIN_CACHE.get(src)!;
@@ -84,8 +87,9 @@ function createCanvas(width: number, height: number) {
 }
 
 function getSkinCanvas(image: HTMLImageElement): SkinCanvas {
-    const { canvas, ctx } = createCanvas(image.width, image.height);
-    ctx.drawImage(image, 0, 0);
+    const canvas = normalizeSkin(image);
+    const ctx = canvas.getContext("2d")!;
+    ctx.imageSmoothingEnabled = false;
     return { canvas, ctx, image };
 }
 

@@ -1,7 +1,8 @@
 import { Canvas, loadImage as loadCanvasImage } from "@napi-rs/canvas";
 import { GIFEncoder, applyPalette, quantize } from "gifenc/dist/gifenc.esm.js";
 import { loadImage } from "./image";
-import { getSkin, valid } from "./mojang";
+import { MojangError, getSkin, valid } from "./mojang";
+import { backdropDataUrl, shadingDataUrl } from "./classicAssets";
 
 type RenderStyle = "classic" | "mascot";
 type RenderFormat = "png" | "gif";
@@ -79,6 +80,11 @@ const DEFAULT_COLORS = ["#00cdac", "#02aab0"];
 const MIN_SIZE = 64;
 const MAX_SIZE = 1024;
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+// base64 is ~4/3 the size of the bytes it encodes
+const MAX_DATA_URL_LENGTH = Math.ceil((MAX_UPLOAD_BYTES * 4) / 3) + 100;
+// Only Mojang's texture server may be fetched by URL; anything else must be uploaded.
+// This stops the API being used to make requests to arbitrary (or internal) hosts.
+const ALLOWED_REMOTE_HOSTS = new Set(["textures.minecraft.net"]);
 
 function createCanvas(width: number, height: number) {
     const canvas = new Canvas(width, height);
@@ -297,16 +303,37 @@ function isImageLikeString(value: string) {
     return value.startsWith("data:image/") || /^https?:\/\//i.test(value);
 }
 
-async function parseImageSourceValue(value: unknown, label: string) {
+function isAllowedRemoteUrl(value: string) {
+    try {
+        const url = new URL(value);
+        return (url.protocol === "https:" || url.protocol === "http:") && ALLOWED_REMOTE_HOSTS.has(url.hostname);
+    } catch {
+        return false;
+    }
+}
+
+async function parseImageSourceValue(value: unknown, label: string, allowRemote: boolean) {
     if (value === null || value === undefined) return undefined;
 
     if (typeof value === "string") {
         const trimmed = value.trim();
         if (!trimmed) return undefined;
 
-        if (isImageLikeString(trimmed)) return trimmed;
+        if (trimmed.startsWith("data:image/")) {
+            if (trimmed.length > MAX_DATA_URL_LENGTH) {
+                throw new PublicRenderError(413, `${label} is too large`);
+            }
+            return trimmed;
+        }
 
-        throw new PublicRenderError(400, `${label} must be a data URL, http URL, or uploaded file`);
+        if (allowRemote && isAllowedRemoteUrl(trimmed)) return trimmed;
+
+        throw new PublicRenderError(
+            400,
+            allowRemote
+                ? `${label} must be a data URL, a textures.minecraft.net URL, or an uploaded file`
+                : `${label} must be a data URL or an uploaded file`
+        );
     }
 
     if (isFile(value)) {
@@ -519,7 +546,8 @@ async function normalizeBodyRenderOptions(params: {
     const format = parseFormat(getScalarString(getInputValue(input, ["format"])));
     const skinSource = await parseImageSourceValue(
         getInputValue(input, ["skin", "skinData", "skinUrl"]),
-        "skin"
+        "skin",
+        true
     );
     const rawBackgroundField = getInputValue(input, ["background"]);
     const backgroundImage = await parseImageSourceValue(
@@ -527,7 +555,8 @@ async function normalizeBodyRenderOptions(params: {
             (typeof rawBackgroundField === "string" && !isImageLikeString(rawBackgroundField)
                 ? null
                 : rawBackgroundField),
-        "background image"
+        "background image",
+        false
     );
 
     return buildNormalizedOptions({
@@ -607,11 +636,17 @@ function buildOutputCanvas(scene: Canvas, size: number) {
     return canvas;
 }
 
-async function loadClassicAssets(origin: string) {
-    const backdrop = await loadImage(new URL("/backdropshading.png", origin).toString());
-    const shading = await loadImage(new URL("/20x20pshading.png", origin).toString());
+let classicAssets: Promise<ClassicAssets> | null = null;
 
-    return { backdrop, shading };
+function loadClassicAssets() {
+    classicAssets ??= Promise.all([loadImage(backdropDataUrl), loadImage(shadingDataUrl)])
+        .then(([backdrop, shading]) => ({ backdrop, shading }))
+        .catch((error) => {
+            classicAssets = null;
+            throw error;
+        });
+
+    return classicAssets;
 }
 
 async function loadRenderableImage(source: ImageSource) {
@@ -623,16 +658,52 @@ async function loadRenderableImage(source: ImageSource) {
 }
 
 async function getSkinImage(options: RenderRequestOptions) {
-    try {
-        if (options.skinSource) {
-            return await loadRenderableImage(options.skinSource);
-        }
+    const source = options.skinSource ?? (await getSkinUrl(options.username!));
+    let image: LoadedImage;
 
-        const skinURL = await getSkin(options.username!);
-        return await loadRenderableImage(skinURL);
+    try {
+        image = await loadRenderableImage(source);
+    } catch {
+        throw options.skinSource
+            ? new PublicRenderError(400, "skin is not a readable image")
+            : new PublicRenderError(502, `Could not download skin for ${options.username}`);
+    }
+
+    const isSkinShape = image.width === 64 && (image.height === 64 || image.height === 32);
+    if (!isSkinShape) {
+        throw new PublicRenderError(400, "skin must be a 64x64 or 64x32 Minecraft skin");
+    }
+
+    return image.height === 32 ? fixLegacyHat(image) : image;
+}
+
+/**
+ * Old 64x32 skins (e.g. Notch's) often have a fully opaque hat layer that Minecraft ignores.
+ * Mirror Minecraft's rule: if the hat area has no transparent pixel at all, clear it.
+ */
+function fixLegacyHat(image: LoadedImage) {
+    const { canvas, ctx } = createCanvas(image.width, image.height);
+    ctx.drawImage(image, 0, 0);
+
+    const hat = ctx.getImageData(32, 0, 32, 16).data;
+    let hasTransparency = false;
+    for (let index = 3; index < hat.length; index += 4) {
+        if (hat[index] < 128) {
+            hasTransparency = true;
+            break;
+        }
+    }
+
+    if (!hasTransparency) ctx.clearRect(32, 0, 32, 16);
+    return canvas;
+}
+
+async function getSkinUrl(username: string) {
+    try {
+        return await getSkin(username);
     } catch (error) {
-        const label = options.username ?? "uploaded skin";
-        throw new PublicRenderError(404, `Could not load skin for ${label}`);
+        if (error instanceof MojangError) throw new PublicRenderError(error.status, error.message);
+        throw error;
     }
 }
 
@@ -719,6 +790,9 @@ function hasOpaquePixels(
     width: number,
     height: number
 ) {
+    // Old 64x32 skins have no overlay regions below y=32; reading outside the canvas throws.
+    if (x + width > ctx.canvas.width || y + height > ctx.canvas.height) return false;
+
     const data = ctx.getImageData(x, y, width, height).data;
 
     for (let index = 3; index < data.length; index += 4) {
@@ -1247,7 +1321,7 @@ async function renderPng(options: RenderRequestOptions) {
             ? renderMascotSprite(skinImage, getMascotAnimationFrames("none")[0], options)
             : renderClassicSprite(
                   skinImage,
-                  options.background === "transparent" ? null : await loadClassicAssets(options.origin),
+                  options.background === "transparent" ? null : await loadClassicAssets(),
                   getClassicAnimationFrames("none")[0],
                   options
               );

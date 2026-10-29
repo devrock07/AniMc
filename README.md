@@ -60,6 +60,9 @@ Important:
 
 - GIF output is mascot-only
 - classic renders should be requested as PNG
+- `skin` must be an uploaded file, a `data:image/...` URL, or a `textures.minecraft.net` URL; background images must be uploads or data URLs (the server won't fetch other URLs)
+- skins must be standard 64x64 or legacy 64x32 PNGs, max 5 MB
+- username lookups are cached for 10 minutes to stay under Mojang's rate limit
 
 Example requests:
 
