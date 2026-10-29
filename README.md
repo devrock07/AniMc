@@ -76,7 +76,7 @@ https://animc.d4vrock.xyz/api/render/devrock14.gif?style=mascot&animation=idle&i
 
 ### Requirements
 
-- Node.js 20
+- Node.js 24
 - npm
 
 ### Setup
